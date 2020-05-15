@@ -3,36 +3,49 @@ var router = express.Router();
 
 var Task = require('../models/task');
 
+/* opt:
+  1: task,
+  2: label,
+  3: status,
+  0: all three
+*/
+
+/**
+ * get task, label, status or all 3 of a particular user
+ * id: _id of user
+ * opt: {0, 1, 2, 3} - what to obtain
+ */
+
 router.get('/:id/:opt', function(req, res, next) {
   let userId = req.params.id;
   let opt = req.params.opt;
   console.log('-----> task ', opt, ' by id: ', userId);
 
-  Task.find( {userId: userId}, function(err, docs) {
-    if(err){
+  Task.find( {userId: userId}, function(err, task) {
+    if(err) {
       let errCode = err.code;
-      console.log("error: ", err.code);
+      console.log("error: ", errCode);
       return next(err);
     }
     
     let ret = {};
     
-    if(docs.length!=1){
+    if(task.length!=1) {
       ret['code'] = 0;
       ret['msg'] = 'Could not obtain data';
       res.json(ret);
     }
 
     if(opt==1) {
-      ret['task'] = docs[0]['task'];
+      ret['task'] = task[0]['task'];
     } else if(opt==2) {
-      ret['label'] = docs[0]['label'];
+      ret['label'] = task[0]['label'];
     } else if(opt==3) {
-      ret['status'] = docs[0]['status'];
+      ret['status'] = task[0]['status'];
     } else if(opt==0) {
-      ret['task'] = docs[0]['task'];
-      ret['label'] = docs[0]['label'];
-      ret['status'] = docs[0]['status'];
+      ret['task'] = task[0]['task'];
+      ret['label'] = task[0]['label'];
+      ret['status'] = task[0]['status'];
     }
     else {
       ret['code'] = 0;
@@ -43,26 +56,87 @@ router.get('/:id/:opt', function(req, res, next) {
   });
 });
 
-router.post('/', function(req, res, next) {
+/**
+ * add task, label, status of a particular user
+ * id: _id of user
+ * opt: {1, 2, 3}
+ * val: val of task(json), label(string), or status(string)
+ */
+router.post('/add', function(req, res, next) {
   console.log(req.body);
   let userId = req.body.id;
   let opt = req.body.opt;
   let val = req.body.val;
   console.log('-----> saving ', opt, ' as ', val, ' for id: ', userId);
 
+  let ret = {};
+
   if(opt==1) {
     console.log('adding task');
+    /* check_me */
+    // ret['task'] = JSON.parse(val); //giving some kinda error
+    ret['task'] = { value: 'do it', label: 'lbl1', status: 'st1' };
   } else if(opt==2) {
     console.log('adding label');
+    ret['label'] = val;
+  } else if(opt==3) {
+    console.log('adding status');
+    ret['status'] = val;
+  } else {
+    console.log('wrong input');
+  }
+
+  console.log(ret);
+
+  Task.updateOne( 
+    { userId: userId },
+    { $push: ret },
+    { safe: true, upsert: true }, 
+    function(err, result) {
+      console.log('result ->' , result);
+      console.log('err -> ',err);
+    }
+  );
+
+  res.json(1);
+  
+});
+
+/**
+ * update task's value, label, status or all 3 for a particular user
+ * id: _id of user
+ * note: _id of note
+ * opt: {0, 1, 2, 3} - what to update
+ * val: value of task(string), label(string), status(string)
+ */
+router.post('/update', function(req, res, next) { //method not working yet
+  console.log(req.body);
+
+  let userId = req.body.id;
+  let noteId = req.body.note;
+  /* check_me: should we use this, or get all 3 from front end by default - old values in case value doesn't change */
+  let opt = req.body.opt;
+  let val = req.body.val;
+
+  console.log('-----> updating', opt, 'as', val, 'for id:', userId);
+
+  let ret = {};
+
+  if(opt==1) {
+    console.log('updating task');
+    ret
+  } else if(opt==2) {
+    console.log('updating label');
     Task.update( {id: userId},
       { $set: { label: val } },
       { upsert: false },
       function(err) { console.log(err); }
     );
   } else if(opt==3) {
-    console.log('adding status');
+    console.log('updating status');
   } else {
     console.log('wrong input');
   }
-});
+})
+
 module.exports = router;

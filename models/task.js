@@ -22,14 +22,10 @@ const TaskSchema = mongoose.Schema({
     }
   }],
   label: [{
-    value: {
-      type: String
-    }
+    type: String
   }],
   status: [{
-    value: {
-      type: String
-    }
+    type: String
   }]
 });
 
