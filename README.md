@@ -2,7 +2,7 @@
 A user specific to-do list using MEAN stack
 
 # TODO
-- [ ] user 
+- [x] user 
   - [x] signup
   - [x] login
 - [ ] event
@@ -13,10 +13,10 @@ A user specific to-do list using MEAN stack
   - [ ] update
     - [ ] event
       - [ ] update task, label, status, or due date of a particular event
-  - [ ] read
-    - [ ] events of a particular user
-    - [ ] list of labels of a particular user
-    - [ ] list of status of a particular user
+  - [x] read
+    - [x] events of a particular user
+    - [x] list of labels of a particular user
+    - [x] list of status of a particular user
   - [ ] delete
     - [ ] an event
     - [ ] a particular label or status (?)
