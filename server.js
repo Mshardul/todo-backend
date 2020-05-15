@@ -2,7 +2,8 @@ var express = require('express');
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
 var cors = require('cors');
-
+var authenticate = require('./authenticate');
+var passport = require('passport');
 var app = express();
 
 /* setting up connection */
@@ -17,6 +18,9 @@ app.use(bodyParser.urlencoded({ extended: false })); //application/x-www-form-ur
 
 /* cors */
 app.use(cors({origin: 'http://localhost:4200'}));
+
+/* passport */
+app.use(passport.initialize());
 
 /* mongoose */
 var mongoose = require('mongoose');

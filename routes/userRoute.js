@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var passport = require('passport');
 
 const User = require('../models/user.js');
 const Task = require('../models/task.js');
@@ -7,7 +8,7 @@ const Task = require('../models/task.js');
 /* REGISTER User */
 router.post('/register', async function(req, res, next) {
   console.log("-----> adding user:", req.body);
-  User.create(req.body, function(err, user) {
+  User.register(new User({username: req.body.username, email: req.body.email}), req.body.password, function(err, user) {
     if(err) {
       let errCode = err.code;
       console.log("error: ", err.code);
@@ -15,34 +16,52 @@ router.post('/register', async function(req, res, next) {
       if(errCode==11000){
         ret['code'] = 0;
         ret['msg'] = 'Email already exists';
-        res.json(ret);
+        res.json({success: false, value: ret});
       }
       return next(err);
     }
     if(user){
-      let userId = user._id;
-      let t = new Task();
-      t.userId = userId;
-      Task.create(t, function(err, task) {
-        if(err) {
-          return next(err);
-        }
-        console.log(task);
+      passport.authenticate('local')(req, res, () => {
+        let userId = user._id;
+        let t = new Task();
+        t.userId = userId;
+        Task.create(t, function(err, task) {
+          if(err) {
+            return next(err);
+          }
+          console.log(task);
+        })
+        res.json({success: true, message: 'Registered Successfully', value: user});
       })
+      
     }
-    res.json(user);
   })
 });
 
 /* VERIFY User */
-router.post('/login', async function(req, res, next) {
+router.post('/login', (req, res, next) => {
   console.log("-----> adding user:", req.body);
-  User.find( { $and: [ { email: req.body.email }, { password: req.body.password} ] }, function(err, user) {
-    if(err) {
-      console.log("error: ", err.code);
+  //authenticate the user's username and hash
+  passport.authenticate('local', (err, user, info) => {
+    if (err)
       return next(err);
+
+    if (!user) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({success: false, status: 'Login Unsuccessful!', err: info});
     }
-    res.json(user);
-  });
+    req.logIn(user, (err) => {
+      if (err) {
+        res.statusCode = 401;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success: false, status: 'Login Unsuccessful!', err: 'Could not log in user!'});          
+      }
+
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({success: true, status: 'Login Successful!', value: user});
+    }); 
+  }) (req, res, next);
 });
 module.exports = router;

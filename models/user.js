@@ -1,17 +1,12 @@
 const mongoose = require('mongoose');
+const passportLocalMongoose = require('passport-local-mongoose');
 
 const UserSchema = mongoose.Schema({
-  name: {
-    type: String
-  },
+  //username and password are automatically added by passport-local-mongoose plugin
   email: {
     type: String,
     required: true,
     unique: true
-  },
-  password: {
-    type: String,
-    required: true
   },
   dateJoined: {
     type: Date,
@@ -21,5 +16,8 @@ const UserSchema = mongoose.Schema({
     type: String
   }
 });
+
+//will add support for uaername and hashed support of password using hash and salt
+UserSchema.plugin(passportLocalMongoose);
 
 const User = module.exports = mongoose.model('User', UserSchema);
