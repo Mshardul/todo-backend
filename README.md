@@ -21,4 +21,5 @@ A user specific to-do list using MEAN stack
     - [ ] priority
     - [ ] label
 
-# db
+# notes
+- validation error (required) eg. email and password must be taken care in the frontend.
