@@ -21,23 +21,22 @@ var Task = require('../models/task');
   0: all three
 */
 
+//commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
+//'tasks' = [task: json = [value: string, date: date, label: string, status: string]], [label: string], [status: string]
+
 /**
  * get task, label, status or all 3 of a particular user
- * id: _id of user
- * opt: {0, 1, 2, 3} - what to obtain
+ * id: '_id' of user or 'userId' of tasks
+ * opt: number = {0, 1, 2, 3} - what to obtain
  */
-
-//commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
 router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
   let userId = req.params.id;
   let opt = req.params.opt;
-  console.log('-----> task ', opt, ' by id: ', userId);
 
   Task.find( {userId: userId}, function(err, task) {
     if(err) {
-      let errCode = err.code;
-      console.log("error: ", errCode);
-      return next(err);
+      console.log(err);
+      res.status(400).send(err.code);
     }
     
     let ret = {};
@@ -70,15 +69,16 @@ router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
 
 /**
  * add task, label, status of a particular user
- * id: _id of user
- * val: json - as per the rules
+ * id: string =  '_id' of user or 'userId' of tasks
+ * val: json = { //one or more
+    "task": {"value": "v", "label": "l", "status": "s"}, 
+    "label": "l2", 
+    "status": "s2"  
+  }
  */
-
-//commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
 router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
   console.log(req.body);
   let userId = req.body.id;
-  /*  */
   let val = JSON.parse(JSON.stringify(req.body.val));
 
   console.log(val);
@@ -96,20 +96,19 @@ router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
       }
     }
   );
-
-  res.json(1);
-  
 });
 
 /**
  * update task's value, label, status or all 3 for a particular user
- * id: _id of user
- * note: _id of task
- * val: json - as per the rules
+ * userid: string = '_id' of user or 'userId' of tasks
+ * taskId: string = '_id' of particular task
+ * val: json = { //one or more
+    "value": "v_new", 
+    "status": "s_new", 
+    "label": "l_new" 
+  }
  */
-
-//commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
-router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) { //method not working yet
+router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) {
   let userId = req.body.userid;
   let taskId = req.body.taskId;
   let val = JSON.parse(JSON.stringify(req.body.val));
@@ -134,13 +133,50 @@ router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) { /
     function(err, done) {
       if(err) {
         console.log(err);
-        res.sendStatus(400);
+        res.status(400).send(err.code);
       } else {
         res.sendStatus(200);
       }
     }
   )
-})
+});
+
+/**
+ * delete particular task, label, status
+ * id: string = '_id' of tasks
+ * opt: number = {1, 2, 3}
+ * val: number|string = 'id' of particular task or label or status
+ */
+router.delete('/:opt/:id/:val', function(req, res, next) {
+  let opt = req.params.opt;
+  let id = req.params.id;
+  var val = req.params.val;
+
+  let ret = {};
+
+  if(opt==1) {
+    ret['task'] = { '_id': val };
+  } else if(opt==2) {
+    ret['label'] = val;
+  } else if(opt==3) {
+    ret['status'] = val;
+  } else {
+    res.sendStatus(403);
+  }
+
+  Task.updateOne(
+    { _id: id },
+    { $pull: ret },
+    function(err, result) {
+      if(err) {
+        console.log(err);
+        res.sendStatus(400);
+      } else {
+        res.sendStatus(200);
+      }
+    }
+  );
+});
 
 //get all the tasks (debugging purpose)
 router.get('/alltasks', (req, res, next) => {
