@@ -4,6 +4,16 @@ var authenticate = require('../authenticate');
 
 var Task = require('../models/task');
 
+/* val = {
+  'task': <json> {
+    'value': <string>
+    'label': <string>
+    'status': <string>
+  },
+  'label': <string>,
+  'status': <string>}
+*/
+
 /* opt:
   1: task,
   2: label,
@@ -16,8 +26,8 @@ var Task = require('../models/task');
  * id: _id of user
  * opt: {0, 1, 2, 3} - what to obtain
  */
-//commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
 
+//commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
 router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
   let userId = req.params.id;
   let opt = req.params.opt;
@@ -35,7 +45,7 @@ router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
     if(task.length!=1) {
       ret['code'] = 0;
       ret['msg'] = 'Could not obtain data';
-      res.json(ret);
+      res.status(400).send(ret);
     }
 
     if(opt==1) {
@@ -54,51 +64,36 @@ router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
       ret['msg'] = 'Wrong Input';
     }
 
-    res.json(ret);
+    res.status(200).send(ret);
   });
 });
 
 /**
  * add task, label, status of a particular user
  * id: _id of user
- * opt: {1, 2, 3}
- * val: val of task(json), label(string), or status(string)
+ * val: json - as per the rules
  */
+
 //commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
 router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
   console.log(req.body);
   let userId = req.body.id;
-  let opt = req.body.opt;
-  let val = req.body.val;
-  console.log('-----> saving ', opt, ' as ', val, ' for id: ', userId);
+  /*  */
+  let val = JSON.parse(JSON.stringify(req.body.val));
 
-  let ret = {};
-
-  if(opt==1) {
-    console.log('adding task');
-    /* check_me */
-    ret['task'] = JSON.parse(JSON.stringify(val)); //giving some kinda error
-    console.log(ret['task']);
-    //ret['task'] = { value: 'do it', label: 'lbl1', status: 'st1' };
-  } else if(opt==2) {
-    console.log('adding label');
-    ret['label'] = val;
-  } else if(opt==3) {
-    console.log('adding status');
-    ret['status'] = val;
-  } else {
-    console.log('wrong input');
-  }
-
-  console.log(ret);
+  console.log(val);
 
   Task.updateOne( 
     { userId: userId },
-    { $push: ret },
+    { $push: val },
     { safe: true, upsert: true }, 
     function(err, result) {
-      console.log('result ->' , result);
-      console.log('err -> ',err);
+      if(err) {
+        console.log(err);
+        res.sendStatus(400);
+      } else {
+        res.sendStatus(200);
+      }
     }
   );
 
@@ -109,42 +104,45 @@ router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
 /**
  * update task's value, label, status or all 3 for a particular user
  * id: _id of user
- * note: _id of note
- * opt: {0, 1, 2, 3} - what to update
- * val: value of task(string), label(string), status(string)
+ * note: _id of task
+ * val: json - as per the rules
  */
+
 //commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
 router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) { //method not working yet
-  console.log(req.body);
-
-  let userId = req.body.id;
-  let noteId = req.body.note;
-  /* check_me: should we use this, or get all 3 from front end by default - old values in case value doesn't change */
-  let opt = req.body.opt;
-  let val = req.body.val;
-
-  console.log('-----> updating', opt, 'as', val, 'for id:', userId);
+  let userId = req.body.userid;
+  let taskId = req.body.taskId;
+  let val = JSON.parse(JSON.stringify(req.body.val));
 
   let ret = {};
 
-  if(opt==1) {
-    console.log('updating task');
-    ret
-  } else if(opt==2) {
-    console.log('updating label');
-    Task.update( {id: userId},
-      { $set: { label: val } },
-      { upsert: false },
-      function(err) { console.log(err); }
-    );
-  } else if(opt==3) {
-    console.log('updating status');
-  } else {
-    console.log('wrong input');
+  if(val.hasOwnProperty('value')) {
+    ret['task.$.value'] = val['value'];
   }
+  if(val.hasOwnProperty('label')) {
+    ret['task.$.label'] = val['label'];
+  }
+  if(val.hasOwnProperty('status')) {
+    ret['task.$.status'] = val['status'];
+  }
+
+  console.log(ret);
+  Task.updateOne(
+    // { $and: [ { 'userId': userId }, { 'task.id': taskId } ] }, // check_me: something's wrong here - although i don't think it is required
+    { 'task._id': taskId },
+    { '$set': ret },
+    function(err, done) {
+      if(err) {
+        console.log(err);
+        res.sendStatus(400);
+      } else {
+        res.sendStatus(200);
+      }
+    }
+  )
 })
 
-//get all the user (debugging purpose)
+//get all the tasks (debugging purpose)
 router.get('/alltasks', (req, res, next) => {
   Task.find({}).then(result => {
     res.send(result)
