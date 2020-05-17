@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var passport = require('passport');
+var authenticate = require('../authenticate');
 
 const User = require('../models/user.js');
 const Task = require('../models/task.js');
@@ -58,10 +59,19 @@ router.post('/login', (req, res, next) => {
         res.json({success: false, status: 'Login Unsuccessful!', err: 'Could not log in user!'});          
       }
 
+      //create the token of the user from user id
+      var token = authenticate.getToken({_id: req.user._id});
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
-      res.json({success: true, status: 'Login Successful!', value: user});
+      res.json({success: true, status: 'Login Successful!', value: user, token: token});
     }); 
   }) (req, res, next);
 });
+
+//get all the user (debugging purpose)
+router.get('/allusers', (req, res, next) => {
+  User.find({}).then(result => {
+    res.send(result)
+  })
+})
 module.exports = router;

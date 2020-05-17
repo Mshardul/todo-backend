@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var authenticate = require('../authenticate');
 
 var Task = require('../models/task');
 
@@ -15,8 +16,9 @@ var Task = require('../models/task');
  * id: _id of user
  * opt: {0, 1, 2, 3} - what to obtain
  */
+//commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
 
-router.get('/:id/:opt', function(req, res, next) {
+router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
   let userId = req.params.id;
   let opt = req.params.opt;
   console.log('-----> task ', opt, ' by id: ', userId);
@@ -62,7 +64,8 @@ router.get('/:id/:opt', function(req, res, next) {
  * opt: {1, 2, 3}
  * val: val of task(json), label(string), or status(string)
  */
-router.post('/add', function(req, res, next) {
+//commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
+router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
   console.log(req.body);
   let userId = req.body.id;
   let opt = req.body.opt;
@@ -74,8 +77,9 @@ router.post('/add', function(req, res, next) {
   if(opt==1) {
     console.log('adding task');
     /* check_me */
-    // ret['task'] = JSON.parse(val); //giving some kinda error
-    ret['task'] = { value: 'do it', label: 'lbl1', status: 'st1' };
+    ret['task'] = JSON.parse(JSON.stringify(val)); //giving some kinda error
+    console.log(ret['task']);
+    //ret['task'] = { value: 'do it', label: 'lbl1', status: 'st1' };
   } else if(opt==2) {
     console.log('adding label');
     ret['label'] = val;
@@ -109,7 +113,8 @@ router.post('/add', function(req, res, next) {
  * opt: {0, 1, 2, 3} - what to update
  * val: value of task(string), label(string), status(string)
  */
-router.post('/update', function(req, res, next) { //method not working yet
+//commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
+router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) { //method not working yet
   console.log(req.body);
 
   let userId = req.body.id;
@@ -139,4 +144,10 @@ router.post('/update', function(req, res, next) { //method not working yet
   }
 })
 
+//get all the user (debugging purpose)
+router.get('/alltasks', (req, res, next) => {
+  Task.find({}).then(result => {
+    res.send(result)
+  })
+})
 module.exports = router;
