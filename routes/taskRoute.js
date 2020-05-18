@@ -77,11 +77,8 @@ router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
   }
  */
 router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
-  console.log(req.body);
   let userId = req.body.id;
   let val = JSON.parse(JSON.stringify(req.body.val));
-
-  console.log(val);
 
   Task.updateOne( 
     { userId: userId },
@@ -125,7 +122,6 @@ router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) {
     ret['task.$.status'] = val['status'];
   }
 
-  console.log(ret);
   Task.updateOne(
     // { $and: [ { 'userId': userId }, { 'task.id': taskId } ] }, // check_me: something's wrong here - although i don't think it is required
     { 'task._id': taskId },
@@ -178,6 +174,49 @@ router.delete('/:opt/:id/:val', function(req, res, next) {
   );
 });
 
+/**
+ * delete all task or all label or all status or all the 3
+ * userId: string = '_id' of user or 'userId' of tasks
+ * opt: number = {0, 1, 2, 3}
+ */
+router.delete('/:opt/:userId', function(req, res, next) {
+  let opt = req.params.opt;
+  let userId = req.params.userId;
+
+  console.log(req.params);
+
+  let ret = {};
+
+  if(opt==1) {
+    ret['task'] = [];
+  } else if(opt==2) {
+    ret['label'] = [];
+  } else if(opt==3) {
+    ret['status'] = [];
+  } else if(opt==0) {
+    ret['task'] = [];
+    ret['label'] = [];
+    ret['status'] = [];
+  } else {
+    res.sendStatus(403);
+  }
+
+  console.log(ret);
+
+  Task.updateOne(
+    { userId: userId },
+    { $set: ret },
+    function(err, result) {
+      if(err) {
+        console.log('err: ', err);
+        res.sendStatus(400);
+      } else {
+        console.log('result: ', result);
+        res.sendStatus(200);
+      }
+    }
+  );
+});
 //get all the tasks (debugging purpose)
 router.get('/alltasks', (req, res, next) => {
   Task.find({}).then(result => {

@@ -6,7 +6,7 @@ A user specific to-do list using MEAN stack
   - [x] signup
   - [x] login
   - [ ] update password
-  - [ ]delete user
+  - [x] delete user
 - [x] event
   - [x] create
     - [x] event: contains task, label, status, due date
@@ -22,7 +22,7 @@ A user specific to-do list using MEAN stack
   - [x] delete
     - [x] an event
     - [x] a particular label or status (?)
-    - [ ] empty event list, label list, or status list
+    - [x] empty event list, label list, or status list
 
 # notes
 

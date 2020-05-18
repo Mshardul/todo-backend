@@ -68,6 +68,36 @@ router.post('/login', (req, res, next) => {
   }) (req, res, next);
 });
 
+/**
+ * delete a particular user
+ * id: '_id' of user
+ */
+router.delete('/:userId', function(req, res, next) {
+  let userId = req.params.userId;
+
+  User.remove(
+    { _id: userId},
+    function(err, result) {
+      if(err) {
+        console.log(err);
+        res.status(400).send('could not remove user');
+      } else {
+        Task.remove(
+          { userId: userId },
+          function(err, result) {
+            if(err) {
+              console.log(err);
+              res.status(400).send('user removed. unable to remove user meta');
+            } else {
+              res.status(200).send('User Deleted');
+            }
+          }
+        )
+      }
+    }
+  );
+});
+
 //get all the user (debugging purpose)
 router.get('/allusers', (req, res, next) => {
   User.find({}).then(result => {
