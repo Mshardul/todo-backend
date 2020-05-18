@@ -9,16 +9,18 @@ const Task = require('../models/task.js');
 /* REGISTER User */
 router.post('/register', async function(req, res, next) {
   console.log("-----> adding user:", req.body);
-  User.register(new User({username: req.body.username, email: req.body.email}), req.body.password, function(err, user) {
+  const new_user = new User({
+    username: req.body.username,
+    email: req.body.email,
+    security_question: req.body.security_question,
+    security_answer: req.body.security_answer
+  })
+  User.register(new_user, req.body.password, function(err, user) {
     if(err) {
-      let errCode = err.code;
-      console.log("error: ", err.code);
-      let ret = {};
-      if(errCode==11000){
-        ret['code'] = 0;
-        ret['msg'] = 'Email already exists';
-        res.json({success: false, value: ret});
-      }
+      console.log("error: ", err);
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({success: false, status: 'User already exists'});
       return next(err);
     }
     if(user){
@@ -32,7 +34,7 @@ router.post('/register', async function(req, res, next) {
           }
           console.log(task);
         })
-        res.json({success: true, message: 'Registered Successfully', value: user});
+        res.json({success: true, status: 'User Registered Successfully'});
       })
       
     }
@@ -41,30 +43,34 @@ router.post('/register', async function(req, res, next) {
 
 /* VERIFY User */
 router.post('/login', (req, res, next) => {
-  console.log("-----> adding user:", req.body);
+  console.log("-----> logging user:", req.body);
   //authenticate the user's username and hash
   passport.authenticate('local', (err, user, info) => {
     if (err)
       return next(err);
-
+    console.log(user)
     if (!user) {
       res.statusCode = 401;
       res.setHeader('Content-Type', 'application/json');
-      res.json({success: false, status: 'Login Unsuccessful!', err: info});
+      res.send({success: false, status: 'Login Unsuccessful!', err: info});
+      res.end();
     }
-    req.logIn(user, (err) => {
-      if (err) {
-        res.statusCode = 401;
-        res.setHeader('Content-Type', 'application/json');
-        res.json({success: false, status: 'Login Unsuccessful!', err: 'Could not log in user!'});          
-      }
+    else{
+      req.logIn(user, (err) => {
+        console.log(user)
+        if (err) {
+          res.statusCode = 401;
+          res.setHeader('Content-Type', 'application/json');
+          res.send({success: false, status: 'Login Unsuccessful!', err: 'Could not log in user!'});          
+        }
 
-      //create the token of the user from user id
-      var token = authenticate.getToken({_id: req.user._id});
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.json({success: true, status: 'Login Successful!', value: user, token: token});
-    }); 
+        //create the token of the user from user id
+        var token = authenticate.getToken({_id: req.user._id});
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({success: true, status: 'Login Successful!', value: user, token: token});
+      }); 
+  }
   }) (req, res, next);
 });
 

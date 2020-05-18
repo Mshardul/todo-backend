@@ -8,6 +8,17 @@ const UserSchema = mongoose.Schema({
     required: true,
     unique: true
   },
+  security_question: {
+    type: String
+  },
+  security_answer: {
+    type: String
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
   dateJoined: {
     type: Date,
     default: Date.now
