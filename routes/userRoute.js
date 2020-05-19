@@ -77,6 +77,68 @@ router.post('/login', (req, res, next) => {
 });
 
 /**
+ * verify the email, security question and answer 
+ * of the user who has forgotten password
+ */
+router.post('/verifyuser', function(req, res, next){
+  User.findOne({$and: [{email: req.body.email}, {security_question: req.body.security_question}, {security_answer: req.body.security_answer}]}, (err, result) => {
+    if(err || !result){
+      console.log(err);
+      req.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      res.send({success: false, status: 'Email Id or Security Details incorrect'})
+    }
+    else if(result){
+      console.log(result);
+      req.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.send({success: true, status: 'Verification Successful'})
+      
+    }
+  })
+})
+
+/**
+ * Change password 
+ */
+router.post('/changepassword', function(req, res, next){
+  User.findOne({email: req.body.email}, (err, result) => {
+    if(err || !result){
+      console.log(err);
+      req.statusCode = 400;
+      res.setHeader('Content-Type', 'application/json');
+      res.send({success: false, status: 'Email Id not found'})
+    }
+    else if(result){
+      result.password = encryption.encrypt(req.body.password);
+      User.updateOne( 
+        { email: result.email},
+        { $set: {
+          password: encryption.encrypt(req.body.password)
+        } },
+        { safe: true, upsert: true }, 
+        function(err, result) {
+          if(err) {
+            console.log(err);
+            req.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.send({success: false, status: 'Email Id not found'})
+          } else {
+            req.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send({success: true, status: 'Password change successfully!'})
+          }
+        }
+      );
+      
+      
+    }
+  })
+})
+
+
+
+/**
  * delete a particular user
  * id: '_id' of user
  */
