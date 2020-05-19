@@ -54,7 +54,7 @@ router.post('/login', (req, res, next) => {
     if (!user) {
       res.statusCode = 401;
       res.setHeader('Content-Type', 'application/json');
-      res.send({success: false, status: 'Login Unsuccessful!', err: info});
+      res.send({success: false, status: 'Email or Password incorrect', err: info});
       res.end();
     }
     else{
@@ -63,7 +63,7 @@ router.post('/login', (req, res, next) => {
         if (err) {
           res.statusCode = 401;
           res.setHeader('Content-Type', 'application/json');
-          res.send({success: false, status: 'Login Unsuccessful!', err: 'Could not log in user!'});          
+          res.send({success: false, status: 'Email or Password incorrect', err: 'Could not log in user!'});          
         }
 
         //create the token of the user from user id
