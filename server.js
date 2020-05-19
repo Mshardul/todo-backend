@@ -5,6 +5,7 @@ var cors = require('cors');
 var authenticate = require('./authenticate');
 var passport = require('passport');
 var app = express();
+global.crypto = require('crypto')
 
 /* setting up connection */
 const port = 3000;

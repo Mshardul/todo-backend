@@ -19,6 +19,7 @@
   "homepage": "https://github.com/Mshardul/todo-backend#readme",
   "dependencies": {
     "cors": "^2.8.5",
+    "crypto-browserify": "^3.11.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.14",

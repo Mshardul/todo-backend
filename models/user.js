@@ -8,6 +8,10 @@ const UserSchema = mongoose.Schema({
     required: true,
     unique: true
   },
+  password: {
+    type: String,
+    required: true,
+  },
   security_question: {
     type: String
   },
@@ -23,12 +27,17 @@ const UserSchema = mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  saltSecret: {
+  salt: {
+    type: String
+  },
+  hash: {
     type: String
   }
 });
 
 //will add support for uaername and hashed support of password using hash and salt
 UserSchema.plugin(passportLocalMongoose);
+
+
 
 const User = module.exports = mongoose.model('User', UserSchema);

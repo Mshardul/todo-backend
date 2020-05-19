@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var passport = require('passport');
 var authenticate = require('../authenticate');
+var encryption = require('../encryption');
 
 const User = require('../models/user.js');
 const Task = require('../models/task.js');
@@ -13,7 +14,8 @@ router.post('/register', async function(req, res, next) {
     username: req.body.username,
     email: req.body.email,
     security_question: req.body.security_question,
-    security_answer: req.body.security_answer
+    security_answer: req.body.security_answer,
+    password: encryption.encrypt(req.body.password)
   })
   User.register(new_user, req.body.password, function(err, user) {
     if(err) {
@@ -34,6 +36,7 @@ router.post('/register', async function(req, res, next) {
           }
           console.log(task);
         })
+        console.log(user)
         res.json({success: true, status: 'User Registered Successfully'});
       })
       
@@ -48,7 +51,6 @@ router.post('/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err)
       return next(err);
-    console.log(user)
     if (!user) {
       res.statusCode = 401;
       res.setHeader('Content-Type', 'application/json');
