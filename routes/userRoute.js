@@ -68,9 +68,19 @@ router.post('/login', (req, res, next) => {
 
         //create the token of the user from user id
         var token = authenticate.getToken({_id: req.user._id});
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.send({success: true, status: 'Login Successful!', value: user, token: token});
+        Task.find({userId: req.user._id}, (err, result) => {
+          if(err){
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.send({success: false, status: 'Tasks not found'})
+          }
+          else{
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send({success: true, status: 'Login Successful!', value: user, token: token, tasks: result});
+          }
+        })
+        
       }); 
   }
   }) (req, res, next);
@@ -84,13 +94,13 @@ router.post('/verifyuser', function(req, res, next){
   User.findOne({$and: [{email: req.body.email}, {security_question: req.body.security_question}, {security_answer: req.body.security_answer}]}, (err, result) => {
     if(err || !result){
       console.log(err);
-      req.statusCode = 400;
+      res.statusCode = 400;
       res.setHeader('Content-Type', 'application/json');
       res.send({success: false, status: 'Email Id or Security Details incorrect'})
     }
     else if(result){
       console.log(result);
-      req.statusCode = 200;
+      res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
       res.send({success: true, status: 'Verification Successful'})
       

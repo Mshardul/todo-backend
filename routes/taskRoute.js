@@ -77,7 +77,8 @@ router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
   }
  */
 router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
-  let userId = req.body.id;
+  console.log(req.body.val)
+  let userId = req.body.userId;
   let val = JSON.parse(JSON.stringify(req.body.val));
 
   Task.updateOne( 
@@ -87,9 +88,14 @@ router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
     function(err, result) {
       if(err) {
         console.log(err);
-        res.sendStatus(400);
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({success: false, status: 'Unable to create the task'})
       } else {
-        res.sendStatus(200);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({success: true, status: 'Task created successfully'})
+
       }
     }
   );

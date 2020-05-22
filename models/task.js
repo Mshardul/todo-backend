@@ -14,12 +14,12 @@ const TaskSchema = mongoose.Schema({
       type: Date,
       default: Date.now
     },
-    label: {
+    label: [{
       type: String
-    },
-    status: {
+    }],
+    status: [{
       type: String
-    }
+    }]
   }],
   label: [{
     type: String
