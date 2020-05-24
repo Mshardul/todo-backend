@@ -223,6 +223,47 @@ router.delete('/:opt/:userId', function(req, res, next) {
     }
   );
 });
+
+/**
+ * get task corresponding to a particular attribute (label or status)
+ * userid: string = '_id' of user or 'userId' of tasks
+ * val: json = { //one of the following
+    "value": "v",
+    "status": "s"
+  }
+ */
+router.post('/attr', function(req, res, next) {
+  console.log(req.body);
+  let userId = req.body.userId;
+  let val = JSON.parse(JSON.stringify(req.body.val));
+
+  let ret = [
+    { '$unwind': '$task' },
+    { '$match': {} },
+    { '$project': {'task': 1} }
+  ];
+
+  let v = '';
+  if(val.hasOwnProperty('label')) {
+    v = val['label'];
+    ret[1]['$match'] = {'task.label': v};
+  } else if(val.hasOwnProperty('status')) {
+    v = val['status'];
+    ret[1]['$match'] = {'task.status': v};
+  }
+
+  console.log('ret ->',ret);
+
+  Task.aggregate(
+    [ ret ],
+    function(err, task){
+      console.log(task);
+      console.log(err);
+      res.send(task);
+    }
+  );
+});
+
 //get all the tasks (debugging purpose)
 router.get('/alltasks', (req, res, next) => {
   Task.find({}).then(result => {
