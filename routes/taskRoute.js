@@ -64,11 +64,11 @@ router.get('/tasks/:userId/:archieved', function(req, res, next) {
  * id: '_id' of user or 'userId' of tasks
  * opt: number = {0, 1, 2, 3} - what to obtain
  */
-router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
+router.post('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
   let userId = req.params.id;
   let opt = req.params.opt;
-
-  Task.find( {userId: userId}, function(err, task) {
+  let data = req.body.data;
+  Task.find( {userId: userId }, function(err, task) {
     if(err) {
       console.log(err);
       res.status(400).send(err.code);
@@ -150,7 +150,7 @@ router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) {
   let userId = req.body.userid; //not required
   let taskId = req.body.taskId;
   let val = JSON.parse(JSON.stringify(req.body.val));
-
+  console.log(req.body);
   let ret = {};
 
   if(val.hasOwnProperty('value')) {
@@ -175,9 +175,13 @@ router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) {
     function(err, done) {
       if(err) {
         console.log(err);
-        res.status(400).send(err.code);
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({success: false, status: 'Unable to update the task'})
       } else {
-        res.sendStatus(200);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({success: true, status: 'Task updated successfully'})
       }
     }
   )
