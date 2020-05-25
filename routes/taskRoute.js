@@ -9,6 +9,7 @@ var Task = require('../models/task');
     'value': <string>
     'label': <string>
     'status': <string>
+    'dueDate': <date>
   },
   'label': <string>,
   'status': <string>}
@@ -24,6 +25,40 @@ var Task = require('../models/task');
 //commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
 //'tasks' = [task: json = [value: string, date: date, label: string, status: string]], [label: string], [status: string]
 
+router.get('/tasks/:userId/:archieved', function(req, res, next) {
+  let userId = req.params.userId;
+  let archieved = req.params.archieved;
+
+  console.log(userId, archieved);
+
+  let ret = [
+    { '$unwind': '$task' },
+    { '$match': {} },
+    { '$project': { 'task': 1} }
+  ];
+
+  let cond = { $and: [ { 'userId': userId }, { 'task.archieved': false } ] };
+
+  let v = '';
+  if(archieved==1) {
+    cond['$and'][1] = { 'task.archieved': true };
+  }
+
+  ret[1]['$match'] = cond;
+
+  console.log('cond ->', cond);
+  console.log('ret ->',ret);
+
+  Task.aggregate(
+    [ ret ],
+    function(err, task){
+      console.log(task);
+      console.log(err);
+      res.send(task);
+    }
+  );
+  
+})
 /**
  * get task, label, status or all 3 of a particular user
  * id: '_id' of user or 'userId' of tasks
@@ -68,9 +103,9 @@ router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
 
 /**
  * add task, label, status of a particular user
- * id: string =  '_id' of user or 'userId' of tasks
+ * userId: string =  '_id' of user or 'userId' of tasks
  * val: json = { //one or more
-    "task": {"value": "v", "label": "l", "status": "s"}, 
+    "task": {"value": "v", "label": "l", "status": "s", "dueDate": "2020-05-26T18:30:00.000Z", "archieved": false}, 
     "label": "l2", 
     "status": "s2"  
   }
@@ -89,12 +124,11 @@ router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
         console.log(err);
         res.statusCode = 400;
         res.setHeader('Content-Type', 'application/json');
-        res.send({success: false, status: 'Unable to create the task'})
+        res.send({success: false, status: 'Unable to create the task'});
       } else {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.send({success: true, status: 'Task created successfully'})
-
+        res.send({success: true, status: 'Task created successfully'});
       }
     }
   );
@@ -107,11 +141,12 @@ router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
  * val: json = { //one or more
     "value": "v_new", 
     "status": "s_new", 
-    "label": "l_new" 
+    "label": "l_new",
+    "authenticate": true
   }
  */
 router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) {
-  let userId = req.body.userid;
+  let userId = req.body.userid; //not required
   let taskId = req.body.taskId;
   let val = JSON.parse(JSON.stringify(req.body.val));
   console.log(req.body);
@@ -126,6 +161,11 @@ router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) {
   if(val.hasOwnProperty('status')) {
     ret['task.$.status'] = val['status'];
   }
+  if(val.hasOwnProperty('archieved')) {
+    ret['task.$.archieved'] = val['archieved'];
+  }
+
+  console.log(ret);
 
   Task.updateOne(
     // { $and: [ { 'userId': userId }, { 'task.id': taskId } ] }, // check_me: something's wrong here - although i don't think it is required
@@ -231,7 +271,7 @@ router.delete('/:opt/:userId', function(req, res, next) {
  * get task corresponding to a particular attribute (label or status)
  * userid: string = '_id' of user or 'userId' of tasks
  * val: json = { //one of the following
-    "value": "v",
+    "label": "l",
     "status": "s"
   }
  */
@@ -243,18 +283,23 @@ router.post('/attr', function(req, res, next) {
   let ret = [
     { '$unwind': '$task' },
     { '$match': {} },
-    { '$project': {'task': 1} }
+    { '$project': { 'task': 1 } }
   ];
+
+  let cond = { $and: [ { 'userId': userId } ] };
 
   let v = '';
   if(val.hasOwnProperty('label')) {
     v = val['label'];
-    ret[1]['$match'] = {'task.label': v};
+    cond['$and'].push({ 'task.label': v });
   } else if(val.hasOwnProperty('status')) {
     v = val['status'];
-    ret[1]['$match'] = {'task.status': v};
+    cond['$and'].push({ 'task.status': v });
   }
 
+  ret[1]['$match'] = cond;
+
+  console.log('cond ->', cond);
   console.log('ret ->',ret);
 
   Task.aggregate(

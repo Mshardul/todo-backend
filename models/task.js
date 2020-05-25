@@ -19,7 +19,16 @@ const TaskSchema = mongoose.Schema({
     }],
     status: [{
       type: String
-    }]
+    }],
+    dueDate: {
+      type: Date,
+      default: Date.now
+    },
+    archieved: {
+      type: Boolean,
+      required: true,
+      default: false //this is not working, so 'required'
+    }
   }],
   label: [{
     type: String
