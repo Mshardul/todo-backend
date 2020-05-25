@@ -29,10 +29,9 @@ var Task = require('../models/task');
  * id: '_id' of user or 'userId' of tasks
  * opt: number = {0, 1, 2, 3} - what to obtain
  */
-router.post('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
+router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
   let userId = req.params.id;
   let opt = req.params.opt;
-  let data = req.body.data;
   Task.find( {userId: userId }, function(err, task) {
     if(err) {
       console.log(err);
