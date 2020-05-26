@@ -268,6 +268,32 @@ router.delete('/:opt/:userId', function(req, res, next) {
 });
 
 /**
+ * add label and status for the user
+ */
+router.post('/addNew', (req, res, next) => {
+  var opt = req.body.opt;
+  var userId = req.body.userId;
+  var label = req.body.label;
+  Task.updateOne( 
+    { userId: userId },
+    { $push: {label: label} },
+    { safe: true, upsert: true }, 
+    function(err, result) {
+      if(err) {
+        console.log(err);
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({success: false, status: 'Unable to create the label'});
+      } else {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({success: true, status: 'Label created successfully'});
+      }
+    }
+  );
+})
+
+/**
  * get task corresponding to a particular attribute (label or status)
  * userid: string = '_id' of user or 'userId' of tasks
  * val: json = { //one of the following
