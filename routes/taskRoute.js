@@ -162,6 +162,9 @@ router.post('/update', /*authenticate.verifyUser,*/ function (req, res, next) {
   if (val.hasOwnProperty('status')) {
     ret['task.$.status'] = val['status'];
   }
+  if (val.hasOwnProperty('dueDate')) {
+    ret['task.$.dueDate'] = val['dueDate'];
+  }
   if (val.hasOwnProperty('archieved')) {
     ret['task.$.archieved'] = val['archieved'];
   }
@@ -169,7 +172,6 @@ router.post('/update', /*authenticate.verifyUser,*/ function (req, res, next) {
   console.log(ret);
 
   Task.updateOne(
-    // { $and: [ { 'userId': userId }, { 'task.id': taskId } ] }, // check_me: something's wrong here - although i don't think it is required
     { 'task._id': taskId },
     { '$set': ret },
     function (err, done) {
