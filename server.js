@@ -18,7 +18,7 @@ app.use(bodyParser.json()); //application/json
 app.use(bodyParser.urlencoded({ extended: false })); //application/x-www-form-urlencoded
 
 /* cors */
-app.use(cors({origin: 'http://localhost:4200'}));
+app.use(cors({origin: ['http://localhost:4400', 'http://localhost:4200']}));
 
 /* passport */
 app.use(passport.initialize());

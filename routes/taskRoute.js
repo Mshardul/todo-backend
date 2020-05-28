@@ -25,7 +25,7 @@ var Task = require('../models/task');
 //commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
 //'tasks' = [task: json = [value: string, date: date, label: string, status: string]], [label: string], [status: string]
 
-router.get('/tasks/:userId/:archieved', function(req, res, next) {
+router.get('/tasks/:userId/:archieved', function (req, res, next) {
   let userId = req.params.userId;
   let archieved = req.params.archieved;
 
@@ -34,60 +34,60 @@ router.get('/tasks/:userId/:archieved', function(req, res, next) {
   let ret = [
     { '$unwind': '$task' },
     { '$match': {} },
-    { '$project': { 'task': 1} }
+    { '$project': { 'task': 1 } }
   ];
 
-  let cond = { $and: [ { 'userId': userId }, { 'task.archieved': false } ] };
+  let cond = { $and: [{ 'userId': userId }, { 'task.archieved': false }] };
 
   let v = '';
-  if(archieved==1) {
+  if (archieved == 1) {
     cond['$and'][1] = { 'task.archieved': true };
   }
 
   ret[1]['$match'] = cond;
 
   console.log('cond ->', cond);
-  console.log('ret ->',ret);
+  console.log('ret ->', ret);
 
   Task.aggregate(
-    [ ret ],
-    function(err, task){
+    [ret],
+    function (err, task) {
       console.log(task);
       console.log(err);
       res.send(task);
     }
   );
-  
+
 })
 /**
  * get task, label, status or all 3 of a particular user
  * id: '_id' of user or 'userId' of tasks
  * opt: number = {0, 1, 2, 3} - what to obtain
  */
-router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
+router.get('/:id/:opt', /*authenticate.verifyUser,*/ function (req, res, next) {
   let userId = req.params.id;
   let opt = req.params.opt;
-  Task.find( {userId: userId }, function(err, task) {
-    if(err) {
+  Task.find({ userId: userId }, function (err, task) {
+    if (err) {
       console.log(err);
       res.status(400).send(err.code);
     }
-    
+
     let ret = {};
-    
-    if(task.length!=1) {
+
+    if (task.length != 1) {
       ret['code'] = 0;
       ret['msg'] = 'Could not obtain data';
       res.status(400).send(ret);
     }
 
-    if(opt==1) {
+    if (opt == 1) {
       ret['task'] = task[0]['task'];
-    } else if(opt==2) {
+    } else if (opt == 2) {
       ret['label'] = task[0]['label'];
-    } else if(opt==3) {
+    } else if (opt == 3) {
       ret['status'] = task[0]['status'];
-    } else if(opt==0) {
+    } else if (opt == 0) {
       ret['task'] = task[0]['task'];
       ret['label'] = task[0]['label'];
       ret['status'] = task[0]['status'];
@@ -110,25 +110,25 @@ router.get('/:id/:opt', /*authenticate.verifyUser,*/ function(req, res, next) {
     "status": "s2"  
   }
  */
-router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
+router.post('/add', /*authenticate.verifyUser,*/ function (req, res, next) {
   console.log(req.body.val)
   let userId = req.body.userId;
   let val = JSON.parse(JSON.stringify(req.body.val));
 
-  Task.updateOne( 
+  Task.updateOne(
     { userId: userId },
     { $push: val },
-    { safe: true, upsert: true }, 
-    function(err, result) {
-      if(err) {
+    { safe: true, upsert: true },
+    function (err, result) {
+      if (err) {
         console.log(err);
         res.statusCode = 400;
         res.setHeader('Content-Type', 'application/json');
-        res.send({success: false, status: 'Unable to create the task'});
+        res.send({ success: false, status: 'Unable to create the task' });
       } else {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.send({success: true, status: 'Task created successfully'});
+        res.send({ success: true, status: 'Task created successfully' });
       }
     }
   );
@@ -145,23 +145,23 @@ router.post('/add', /*authenticate.verifyUser,*/ function(req, res, next) {
     "authenticate": true
   }
  */
-router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) {
+router.post('/update', /*authenticate.verifyUser,*/ function (req, res, next) {
   let userId = req.body.userid; //not required
   let taskId = req.body.taskId;
   let val = JSON.parse(JSON.stringify(req.body.val));
   console.log(req.body);
   let ret = {};
 
-  if(val.hasOwnProperty('value')) {
+  if (val.hasOwnProperty('value')) {
     ret['task.$.value'] = val['value'];
   }
-  if(val.hasOwnProperty('label')) {
+  if (val.hasOwnProperty('label')) {
     ret['task.$.label'] = val['label'];
   }
-  if(val.hasOwnProperty('status')) {
+  if (val.hasOwnProperty('status')) {
     ret['task.$.status'] = val['status'];
   }
-  if(val.hasOwnProperty('archieved')) {
+  if (val.hasOwnProperty('archieved')) {
     ret['task.$.archieved'] = val['archieved'];
   }
 
@@ -171,19 +171,64 @@ router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) {
     // { $and: [ { 'userId': userId }, { 'task.id': taskId } ] }, // check_me: something's wrong here - although i don't think it is required
     { 'task._id': taskId },
     { '$set': ret },
-    function(err, done) {
-      if(err) {
+    function (err, done) {
+      if (err) {
         console.log(err);
         res.statusCode = 400;
         res.setHeader('Content-Type', 'application/json');
-        res.send({success: false, status: 'Unable to update the task'})
+        res.send({ success: false, status: 'Unable to update the task' })
       } else {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.send({success: true, status: 'Task updated successfully'})
+        res.send({ success: true, status: 'Task updated successfully' })
       }
     }
   )
+});
+
+router.post('/updateLabel', /*authenticate.verifyUser,*/ function (req, res, next) {
+  let userId = req.body.userId;
+  let val = JSON.parse(JSON.stringify(req.body.val));
+  let tasks = JSON.parse(JSON.stringify(req.body.tasks));
+  let opt = req.body.opt;
+
+  if(opt == 1){
+    Task.updateOne(
+      //{ $and: [ { 'userId': userId }, { 'task.id': taskId } ] }, // check_me: something's wrong here - although i don't think it is required
+      { 'userId': userId },
+      { '$set': { 'task': tasks, 'label': val } },
+      function (err, done) {
+        if (err) {
+          console.log(err);
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.send({ success: false, status: 'Unable to update the label' })
+        } else {
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.send({ success: true, status: 'Label updated successfully' })
+        }
+      }
+    )
+  }
+  else if(opt == 2){
+    Task.updateOne(
+      { 'userId': userId },
+      { '$set': { 'task': tasks, 'status': val } },
+      function (err, done) {
+        if (err) {
+          console.log(err);
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.send({ success: false, status: 'Unable to update the status' })
+        } else {
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.send({ success: true, status: 'Status updated successfully' })
+        }
+      }
+    )
+  }
 });
 
 /**
@@ -192,18 +237,18 @@ router.post('/update', /*authenticate.verifyUser,*/ function(req, res, next) {
  * opt: number = {1, 2, 3}
  * val: number|string = 'id' of particular task or label or status
  */
-router.delete('/:opt/:id/:val', function(req, res, next) {
+router.delete('/:opt/:id/:val', function (req, res, next) {
   let opt = req.params.opt;
   let id = req.params.id;
   var val = req.params.val;
 
   let ret = {};
 
-  if(opt==1) {
+  if (opt == 1) {
     ret['task'] = { '_id': val };
-  } else if(opt==2) {
+  } else if (opt == 2) {
     ret['label'] = val;
-  } else if(opt==3) {
+  } else if (opt == 3) {
     ret['status'] = val;
   } else {
     res.sendStatus(403);
@@ -212,8 +257,8 @@ router.delete('/:opt/:id/:val', function(req, res, next) {
   Task.updateOne(
     { _id: id },
     { $pull: ret },
-    function(err, result) {
-      if(err) {
+    function (err, result) {
+      if (err) {
         console.log(err);
         res.sendStatus(400);
       } else {
@@ -228,7 +273,7 @@ router.delete('/:opt/:id/:val', function(req, res, next) {
  * userId: string = '_id' of user or 'userId' of tasks
  * opt: number = {0, 1, 2, 3}
  */
-router.delete('/:opt/:userId', function(req, res, next) {
+router.delete('/:opt/:userId', function (req, res, next) {
   let opt = req.params.opt;
   let userId = req.params.userId;
 
@@ -236,13 +281,13 @@ router.delete('/:opt/:userId', function(req, res, next) {
 
   let ret = {};
 
-  if(opt==1) {
+  if (opt == 1) {
     ret['task'] = [];
-  } else if(opt==2) {
+  } else if (opt == 2) {
     ret['label'] = [];
-  } else if(opt==3) {
+  } else if (opt == 3) {
     ret['status'] = [];
-  } else if(opt==0) {
+  } else if (opt == 0) {
     ret['task'] = [];
     ret['label'] = [];
     ret['status'] = [];
@@ -255,8 +300,8 @@ router.delete('/:opt/:userId', function(req, res, next) {
   Task.updateOne(
     { userId: userId },
     { $set: ret },
-    function(err, result) {
-      if(err) {
+    function (err, result) {
+      if (err) {
         console.log('err: ', err);
         res.sendStatus(400);
       } else {
@@ -273,24 +318,45 @@ router.delete('/:opt/:userId', function(req, res, next) {
 router.post('/addNew', (req, res, next) => {
   var opt = req.body.opt;
   var userId = req.body.userId;
-  var label = req.body.label;
-  Task.updateOne( 
-    { userId: userId },
-    { $push: {label: label} },
-    { safe: true, upsert: true }, 
-    function(err, result) {
-      if(err) {
-        console.log(err);
-        res.statusCode = 400;
-        res.setHeader('Content-Type', 'application/json');
-        res.send({success: false, status: 'Unable to create the label'});
-      } else {
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.send({success: true, status: 'Label created successfully'});
+  var val = req.body.val;
+  if (opt == 1) {
+    Task.updateOne(
+      { userId: userId },
+      { $push: { label: val } },
+      { safe: true, upsert: true },
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.send({ success: false, status: 'Unable to create the label' });
+        } else {
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.send({ success: true, status: 'Label created successfully' });
+        }
       }
-    }
-  );
+    );
+  }
+  if (opt == 2) {
+    Task.updateOne(
+      { userId: userId },
+      { $push: { status: val } },
+      { safe: true, upsert: true },
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.send({ success: false, status: 'Unable to create the status' });
+        } else {
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.send({ success: true, status: 'Status created successfully' });
+        }
+      }
+    );
+  }
 })
 
 /**
@@ -301,7 +367,7 @@ router.post('/addNew', (req, res, next) => {
     "status": "s"
   }
  */
-router.post('/attr', function(req, res, next) {
+router.post('/attr', function (req, res, next) {
   console.log(req.body);
   let userId = req.body.userId;
   let val = JSON.parse(JSON.stringify(req.body.val));
@@ -312,13 +378,13 @@ router.post('/attr', function(req, res, next) {
     { '$project': { 'task': 1 } }
   ];
 
-  let cond = { $and: [ { 'userId': userId } ] };
+  let cond = { $and: [{ 'userId': userId }] };
 
   let v = '';
-  if(val.hasOwnProperty('label')) {
+  if (val.hasOwnProperty('label')) {
     v = val['label'];
     cond['$and'].push({ 'task.label': v });
-  } else if(val.hasOwnProperty('status')) {
+  } else if (val.hasOwnProperty('status')) {
     v = val['status'];
     cond['$and'].push({ 'task.status': v });
   }
@@ -326,11 +392,11 @@ router.post('/attr', function(req, res, next) {
   ret[1]['$match'] = cond;
 
   console.log('cond ->', cond);
-  console.log('ret ->',ret);
+  console.log('ret ->', ret);
 
   Task.aggregate(
-    [ ret ],
-    function(err, task){
+    [ret],
+    function (err, task) {
       console.log(task);
       console.log(err);
       res.send(task);
