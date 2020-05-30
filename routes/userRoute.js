@@ -34,9 +34,7 @@ router.post('/register', async function(req, res, next) {
           if(err) {
             return next(err);
           }
-          console.log(task);
         })
-        console.log(user)
         res.json({success: true, status: 'User Registered Successfully'});
       })
       
@@ -108,13 +106,33 @@ router.post('/verifyuser', function(req, res, next){
   })
 })
 
+router.post('/saveUser', (req, res, next)=> {
+  console.log(req.body);
+      User.updateOne( 
+        { _id: req.body._id},
+        { $set: req.body },
+        { safe: true, upsert: true }, 
+        function(err, result) {
+          if(err) {
+            console.log(err);
+            req.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.send({success: false, status: 'User not found'})
+          } else {
+            req.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send({success: true, status: 'User changed successfully!'})
+          }
+        }
+      );
+})
+
 /**
  * Change password 
  */
 router.post('/changepassword', function(req, res, next){
   User.findOne({email: req.body.email}, (err, result) => {
     if(err || !result){
-      console.log(err);
       req.statusCode = 400;
       res.setHeader('Content-Type', 'application/json');
       res.send({success: false, status: 'Email Id not found'})
@@ -145,6 +163,25 @@ router.post('/changepassword', function(req, res, next){
     }
   })
 })
+
+
+router.get('/checkJWTToken', (req, res) => {
+  passport.authenticate('jwt', {session: false}, (err, user, info) => {
+    if (err)
+      return next(err);
+    if (!user) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      return res.json({status: 'JWT invalid!', success: false, err: info});
+    }
+    else {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      return res.json({status: 'JWT valid!', success: true, user: user});
+
+    }
+  }) (req, res);
+});
 
 
 

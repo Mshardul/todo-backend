@@ -147,7 +147,6 @@ router.post('/add', /*authenticate.verifyUser,*/ function (req, res, next) {
   }
  */
 router.post('/update', /*authenticate.verifyUser,*/ function (req, res, next) {
-  let userId = req.body.userid; //not required
   let taskId = req.body.taskId;
   let val = JSON.parse(JSON.stringify(req.body.val));
   console.log(req.body);
@@ -168,9 +167,7 @@ router.post('/update', /*authenticate.verifyUser,*/ function (req, res, next) {
   if (val.hasOwnProperty('archieved')) {
     ret['task.$.archieved'] = val['archieved'];
   }
-
-  console.log(ret);
-
+  console.log(ret)
   Task.updateOne(
     { 'task._id': taskId },
     { '$set': ret },
@@ -195,7 +192,7 @@ router.post('/updateLabel', /*authenticate.verifyUser,*/ function (req, res, nex
   let tasks = JSON.parse(JSON.stringify(req.body.tasks));
   let opt = req.body.opt;
 
-  if(opt == 1){
+  if (opt == 1) {
     Task.updateOne(
       //{ $and: [ { 'userId': userId }, { 'task.id': taskId } ] }, // check_me: something's wrong here - although i don't think it is required
       { 'userId': userId },
@@ -214,7 +211,7 @@ router.post('/updateLabel', /*authenticate.verifyUser,*/ function (req, res, nex
       }
     )
   }
-  else if(opt == 2){
+  else if (opt == 2) {
     Task.updateOne(
       { 'userId': userId },
       { '$set': { 'task': tasks, 'status': val } },
@@ -241,7 +238,8 @@ router.post('/updateLabel', /*authenticate.verifyUser,*/ function (req, res, nex
  * val: number|string = 'id' of particular task or label or status
  */
 router.delete('/:opt/:id/:val', function (req, res, next) {
-  let opt = req.params.opt;
+  console.log(req.params)
+  let opt = parseInt(req.params.opt);
   let id = req.params.id;
   var val = req.params.val;
 
@@ -256,16 +254,20 @@ router.delete('/:opt/:id/:val', function (req, res, next) {
   } else {
     res.sendStatus(403);
   }
-
+  console.log(ret)
   Task.updateOne(
     { _id: id },
     { $pull: ret },
     function (err, result) {
       if (err) {
         console.log(err);
-        res.sendStatus(400);
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({ success: false, status: 'Unable to delete the task' })
       } else {
-        res.sendStatus(200);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({ success: true, status: 'Task has been deleted successfully' })
       }
     }
   );
