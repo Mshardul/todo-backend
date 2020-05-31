@@ -17,9 +17,9 @@ const TaskSchema = mongoose.Schema({
     label: [{
       type: String
     }],
-    status: [{
+    status: {
       type: String
-    }],
+    },
     dueDate: {
       type: Date,
       default: Date.now
