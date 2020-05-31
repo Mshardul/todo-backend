@@ -24,7 +24,11 @@ var Task = require('../models/task');
 
 //commenting authenticate.verifyuser because right now we are not attaching beraer token with every request
 //'tasks' = [task: json = [value: string, date: date, label: string, status: string]], [label: string], [status: string]
-
+/**
+ * getting tasks, either archieved or unarchieved
+ * userId: '_id' of user or 'userId' of tasks
+ * archieved: number = {1, 2}
+ */
 router.get('/tasks/:userId/:archieved', function (req, res, next) {
   let userId = req.params.userId;
   let archieved = req.params.archieved;
@@ -62,11 +66,11 @@ router.get('/tasks/:userId/:archieved', function (req, res, next) {
 
 /**
  * get task, label, status or all 3 of a particular user
- * id: '_id' of user or 'userId' of tasks
+ * userId: '_id' of user or 'userId' of tasks
  * opt: number = {0, 1, 2, 3} - what to obtain
  */
-router.get('/:id/:opt', /*authenticate.verifyUser,*/ function (req, res, next) {
-  let userId = req.params.id;
+router.get('/:userId/:opt', /*authenticate.verifyUser,*/ function (req, res, next) {
+  let userId = req.params.userId;
   let opt = req.params.opt;
   Task.find({ userId: userId }, function (err, task) {
     if (err) {
@@ -81,6 +85,8 @@ router.get('/:id/:opt', /*authenticate.verifyUser,*/ function (req, res, next) {
       ret['msg'] = 'Could not obtain data';
       res.status(400).send(ret);
     }
+
+    console.log('task ->', task);
 
     if (opt == 1) {
       ret['task'] = task[0]['task'];
@@ -106,9 +112,9 @@ router.get('/:id/:opt', /*authenticate.verifyUser,*/ function (req, res, next) {
  * add task, label, status of a particular user
  * userId: string =  '_id' of user or 'userId' of tasks
  * val: json = { //one or more
-    "task": {"value": "v", "label": "l", "status": "s", "dueDate": "2020-05-26T18:30:00.000Z", "archieved": false}, 
-    "label": "l2", 
-    "status": "s2"  
+    "task": {"value": "<task_value>", "label": "<label_id>", "status": "<status_id>", "dueDate": "2020-05-26T18:30:00.000Z", "archieved": false},
+    "label": "<label_value>" ,
+    "status": "<label_value>"
   }
  */
 router.post('/add', /*authenticate.verifyUser,*/ function (req, res, next) {
@@ -137,7 +143,7 @@ router.post('/add', /*authenticate.verifyUser,*/ function (req, res, next) {
 
 /**
  * update task's value, label, status or all 3 for a particular user
- * userid: string = '_id' of user or 'userId' of tasks
+ * userId: string = '_id' of user or 'userId' of tasks // check this - use userId instead of taskId 
  * taskId: string = '_id' of particular task
  * val: json = { //one or more
     "value": "v_new", 
@@ -186,61 +192,56 @@ router.post('/update', /*authenticate.verifyUser,*/ function (req, res, next) {
   )
 });
 
+/**
+ * update label and status of a particular user, along with update label and status for particular tasks
+ * userId: string = '_id' of user, 'userId' of task
+ * val: 
+ * opt: number = {1, 2}
+ */
 router.post('/updateLabel', /*authenticate.verifyUser,*/ function (req, res, next) {
   let userId = req.body.userId;
   let val = JSON.parse(JSON.stringify(req.body.val));
   let tasks = JSON.parse(JSON.stringify(req.body.tasks));
   let opt = req.body.opt;
 
-  if (opt == 1) {
-    Task.updateOne(
-      //{ $and: [ { 'userId': userId }, { 'task.id': taskId } ] }, // check_me: something's wrong here - although i don't think it is required
-      { 'userId': userId },
-      { '$set': { 'task': tasks, 'label': val } },
-      function (err, done) {
-        if (err) {
-          console.log(err);
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.send({ success: false, status: 'Unable to update the label' })
-        } else {
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'application/json');
-          res.send({ success: true, status: 'Label updated successfully' })
-        }
-      }
-    )
+  let ret = { 'task': tasks };
+
+  if(opt == 1) {
+    ret['label'] = val;
+  } else if(opt == 2) {
+    ret['status'] = val;
+  } else {
+    res.status(400).send('Wrong choice');
   }
-  else if (opt == 2) {
-    Task.updateOne(
-      { 'userId': userId },
-      { '$set': { 'task': tasks, 'status': val } },
-      function (err, done) {
-        if (err) {
-          console.log(err);
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.send({ success: false, status: 'Unable to update the status' })
-        } else {
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'application/json');
-          res.send({ success: true, status: 'Status updated successfully' })
-        }
+
+  Task.updateOne(
+    { 'userId': userId },
+    { '$set': ret },
+    function(err, done) {
+      if(err) {
+        console.log(err);
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({ success: false, status: 'Unable to update' });
+      } else {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({ success: true, status: 'updated successfully' });
       }
-    )
-  }
+    }
+  );
 });
 
 /**
  * delete particular task, label, status
- * id: string = '_id' of tasks
+ * userId: string = '_id' of user, 'userId' of task
  * opt: number = {1, 2, 3}
  * val: number|string = 'id' of particular task or label or status
  */
-router.delete('/:opt/:id/:val', function (req, res, next) {
+router.delete('/:opt/:userId/:val', function (req, res, next) {
   console.log(req.params)
   let opt = parseInt(req.params.opt);
-  let id = req.params.id;
+  let userId = req.params.userId;
   var val = req.params.val;
 
   let ret = {};
@@ -256,18 +257,18 @@ router.delete('/:opt/:id/:val', function (req, res, next) {
   }
   console.log(ret)
   Task.updateOne(
-    { _id: id },
+    { userId: userId },
     { $pull: ret },
     function (err, result) {
       if (err) {
         console.log(err);
         res.statusCode = 400;
         res.setHeader('Content-Type', 'application/json');
-        res.send({ success: false, status: 'Unable to delete the task' })
+        res.send({ success: false, status: 'Unable to delete' })
       } else {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.send({ success: true, status: 'Task has been deleted successfully' })
+        res.send({ success: true, status: 'deleted successfully' })
       }
     }
   );
@@ -319,49 +320,45 @@ router.delete('/:opt/:userId', function (req, res, next) {
 
 /**
  * add label and status for the user
+ * opt: number = {1, 2}
+ * userId: string = '_id' of user or 'userId' of tasks
+ * val: json = { //
+ *    value: <label / status>
+ * }
  */
 router.post('/addNew', (req, res, next) => {
-  var opt = req.body.opt;
-  var userId = req.body.userId;
-  var val = req.body.val;
-  if (opt == 1) {
-    Task.updateOne(
-      { userId: userId },
-      { $push: { label: val } },
-      { safe: true, upsert: true },
-      function (err, result) {
-        if (err) {
-          console.log(err);
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.send({ success: false, status: 'Unable to create the label' });
-        } else {
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'application/json');
-          res.send({ success: true, status: 'Label created successfully' });
-        }
-      }
-    );
+  let opt = req.body.opt;
+  let userId = req.body.userId;
+  let val = req.body.val;
+
+  let ret = {};
+  if(opt == 1) {
+    ret['label'] = val;
+  } else if(opt == 2) {
+    ret['status'] = val;
+  } else {
+    ret['code'] = 0;
+    ret['msg'] = 'Wrong option';
+    res.status(400).send(ret);
   }
-  if (opt == 2) {
-    Task.updateOne(
-      { userId: userId },
-      { $push: { status: val } },
-      { safe: true, upsert: true },
-      function (err, result) {
-        if (err) {
-          console.log(err);
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.send({ success: false, status: 'Unable to create the status' });
-        } else {
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'application/json');
-          res.send({ success: true, status: 'Status created successfully' });
-        }
+
+  Task.updateOne(
+    { userId: userId },
+    { $push: ret },
+    { safe: true, upsert: true },
+    function(err, result) {
+      if (err) {
+        console.log(err);
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({ success: false, status: 'Unable to create' });
+      } else {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.send({ success: true, status: 'created successfully' });
       }
-    );
-  }
+    }
+  );
 })
 
 /**
@@ -395,9 +392,6 @@ router.post('/attr', function (req, res, next) {
   }
 
   ret[1]['$match'] = cond;
-
-  console.log('cond ->', cond);
-  console.log('ret ->', ret);
 
   Task.aggregate(
     [ret],
