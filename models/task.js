@@ -28,6 +28,10 @@ const TaskSchema = mongoose.Schema({
       type: Boolean,
       required: true,
       default: false //this is not working, so 'required'
+    },
+    progress: {
+      type: Number,
+      default: 0
     }
   }],
   label: [{

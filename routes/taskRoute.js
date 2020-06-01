@@ -173,7 +173,10 @@ router.post('/update', /*authenticate.verifyUser,*/ function (req, res, next) {
   if (val.hasOwnProperty('archieved')) {
     ret['task.$.archieved'] = val['archieved'];
   }
-  console.log(ret)
+  if (val.hasOwnProperty('progress')) {
+    ret['task.$.progress'] = val['progress'];
+  }
+  console.log(ret);
   Task.updateOne(
     { 'task._id': taskId },
     { '$set': ret },
