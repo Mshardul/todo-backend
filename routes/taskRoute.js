@@ -40,12 +40,18 @@ router.get('/tasks/:userId/:archieved', function (req, res, next) {
     { '$match': {} },
     { '$project': { 'task': 1 } }
   ];
-
-  let cond = { $and: [{ 'userId': userId }, { 'task.archieved': false }] };
+  let cond = {}
+  if (archieved == 0) {
+    cond = { $and: [{ 'userId': userId }, { 'task.archieved': false }] };
+  }
 
   let v = '';
   if (archieved == 1) {
-    cond['$and'][1] = { 'task.archieved': true };
+    cond = { $and: [{ 'userId': userId }, { 'task.archieved': true }] }
+  }
+
+  if(archieved == 2){
+    cond = { $and: [{ 'userId': userId }] }
   }
 
   ret[1]['$match'] = cond;
@@ -209,9 +215,9 @@ router.post('/updateLabel', /*authenticate.verifyUser,*/ function (req, res, nex
 
   let ret = { 'task': tasks };
 
-  if(opt == 1) {
+  if (opt == 1) {
     ret['label'] = val;
-  } else if(opt == 2) {
+  } else if (opt == 2) {
     ret['status'] = val;
   } else {
     res.status(400).send('Wrong choice');
@@ -220,8 +226,8 @@ router.post('/updateLabel', /*authenticate.verifyUser,*/ function (req, res, nex
   Task.updateOne(
     { 'userId': userId },
     { '$set': ret },
-    function(err, done) {
-      if(err) {
+    function (err, done) {
+      if (err) {
         console.log(err);
         res.statusCode = 400;
         res.setHeader('Content-Type', 'application/json');
@@ -335,9 +341,9 @@ router.post('/addNew', (req, res, next) => {
   let val = req.body.val;
 
   let ret = {};
-  if(opt == 1) {
+  if (opt == 1) {
     ret['label'] = val;
-  } else if(opt == 2) {
+  } else if (opt == 2) {
     ret['status'] = val;
   } else {
     ret['code'] = 0;
@@ -349,7 +355,7 @@ router.post('/addNew', (req, res, next) => {
     { userId: userId },
     { $push: ret },
     { safe: true, upsert: true },
-    function(err, result) {
+    function (err, result) {
       if (err) {
         console.log(err);
         res.statusCode = 400;
